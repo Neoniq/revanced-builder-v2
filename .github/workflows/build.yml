@@ -30,8 +30,9 @@ jobs:
         env:
           KEYSTORE: ${{ secrets.KEYSTORE }}
         run: |
-          echo "$KEYSTORE" | base64 -d > ks.keystore
-          echo "KEYSTORE_PATH=$(pwd)/ks.keystore" >> "$GITHUB_ENV"
+          rm -f ks.keystore
+          echo "$KEYSTORE" | base64 -d > revanced.keystore
+          echo "KEYSTORE_PATH=$(pwd)/revanced.keystore" >> "$GITHUB_ENV"
 
       - name: Update config
         if: ${{ inputs.from_ci }}
