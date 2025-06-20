@@ -25,6 +25,14 @@ jobs:
           fetch-depth: 0
           submodules: true
 
+      - name: Decode keystore and set path
+        if: env.KEYSTORE != null
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+        run: |
+          echo "$KEYSTORE" | base64 -d > ks.keystore
+          echo "KEYSTORE_PATH=$(pwd)/ks.keystore" >> "$GITHUB_ENV"
+
       - name: Update config
         if: ${{ inputs.from_ci }}
         run: |
@@ -47,6 +55,9 @@ jobs:
       - name: Build modules/APKs
         run: if [ -f "config.json" ]; then ./build.sh config.json; else ./build.sh config.toml; fi
         env:
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.KEY_PASS }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: $GITHUB_REPOSITORY
           NEXT_VER_CODE: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
