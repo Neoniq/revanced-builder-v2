@@ -439,7 +439,7 @@ patch_apk() {
 	local key_pass=${KEY_PASS:-$keystore_pass}
 
 	local cmd="env -u GITHUB_REPOSITORY java -jar $rv_cli_jar patch $stock_input --purge -o $patched_apk -p $rv_patches_jar --keystore=$keystore_path \
---keystore-password=$keystore_pass --keystore-entry-alias=$key_alias --keystore-entry-password=$key_pass --signer=jhc $patcher_args"
+--keystore-password=$keystore_pass --keystore-entry-alias=$key_alias --keystore-entry-password=$key_pass --signer=$key_alias $patcher_args"
 	if [ "$OS" = Android ]; then cmd+=" --custom-aapt2-binary=${AAPT2}"; fi
 	pr "$cmd"
 	if eval "$cmd"; then [ -f "$patched_apk" ]; else

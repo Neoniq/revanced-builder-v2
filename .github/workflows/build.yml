@@ -30,7 +30,6 @@ jobs:
         env:
           KEYSTORE: ${{ secrets.KEYSTORE }}
         run: |
-          rm -f ks.keystore
           echo "$KEYSTORE" | base64 -d > revanced.keystore
           echo "KEYSTORE_PATH=$(pwd)/revanced.keystore" >> "$GITHUB_ENV"
 
