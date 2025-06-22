@@ -131,30 +131,97 @@ jobs:
           NL=$'\n'
           APKS=""
           MODULES=""
+          APK_COUNT=0
+          MODULE_COUNT=0
+          
           for OUTPUT in *; do
             DL_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}/${OUTPUT}"
             if [[ $OUTPUT = *.apk ]]; then
               APKS+="${NL}📦[${OUTPUT}](${DL_URL})"
+              APK_COUNT=$((APK_COUNT + 1))
             elif [[ $OUTPUT = *.zip ]]; then
               MODULES+="${NL}📦[${OUTPUT}](${DL_URL})"
+              MODULE_COUNT=$((MODULE_COUNT + 1))
             fi
           done
           MODULES=${MODULES#"$NL"}
           APKS=${APKS#"$NL"}
 
           BODY="$(sed 's/^\* \*\*/↪ \*\*/g; s/^\* `/↪ \*\*/g; s/`/\*/g; s/^\* /\↪/g; s/\*\*/\*/g; s/###//g; s/^- /↪ /g; /^==/d;' ../build.md)"
-          MSG="*New build!*
+          
+          # Build download links section conditionally
+          DOWNLOAD_SECTION=""
+          if [ $MODULE_COUNT -gt 0 ] || [ $APK_COUNT -gt 0 ]; then
+            DOWNLOAD_SECTION="*🔗 Download Links:*"
+            if [ $MODULE_COUNT -gt 0 ]; then
+              DOWNLOAD_SECTION="${DOWNLOAD_SECTION}${NL}Modules:${NL}${MODULES}"
+            fi
+            if [ $APK_COUNT -gt 0 ]; then
+              DOWNLOAD_SECTION="${DOWNLOAD_SECTION}${NL}${NL}APKs:${NL}${APKS}"
+            fi
+            DOWNLOAD_SECTION="${DOWNLOAD_SECTION}${NL}"
+          fi
+          
+          # Build files notification section conditionally
+          FILES_SECTION=""
+          if [ $MODULE_COUNT -gt 0 ] || [ $APK_COUNT -gt 0 ]; then
+            FILES_SECTION="*📁 Files will be sent below ⬇️*${NL}${NL}"
+          fi
+
+          MSG="*New build completed! 🎉*
 
           ${BODY}
 
-          *▼ Download Links:*
-          Modules:
-          ${MODULES}
+          ${FILES_SECTION}${DOWNLOAD_SECTION}
 
-          APKs:
-          ${APKS}
+          *📊 Build Info:*
+          ↪ Version: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
+          ↪ Commit: [\`${GITHUB_SHA:0:7}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA})
+          ↪ Repository: [${GITHUB_REPOSITORY}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY})
           "
           echo "'$MSG'"
-          MSG=${MSG:0:9450}
+          MSG=${MSG:0:4000}  # Reduced for space since we're sending files too
+
+          # First send the summary message with links
+          echo "--- Sending Summary Message ---"
           POST="https://api.telegram.org/bot${TG_TOKEN}/sendMessage"
           curl -X POST --data-urlencode "parse_mode=Markdown" --data-urlencode "disable_web_page_preview=true" --data-urlencode "text=${MSG}" --data-urlencode "chat_id=${TG_CHAT}" "$POST"
+          sleep 2  # Give message time to appear first
+
+          # Then send all APK files (only if they exist)
+          if [ $APK_COUNT -gt 0 ]; then
+            echo "--- Sending APK Files ---"
+            for OUTPUT in *.apk; do
+              [ "$OUTPUT" = "*.apk" ] && continue
+              echo "Sending APK: $OUTPUT"
+              FILE_SIZE=$(du -h "$OUTPUT" | cut -f1)
+              CAPTION="📱 <b>${OUTPUT}</b>%0A📏 Size: ${FILE_SIZE}%0A🏷️ Build: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}"
+              
+              curl -F "document=@$OUTPUT" \
+                   -F "caption=${CAPTION}" \
+                   -F "parse_mode=HTML" \
+                   "https://api.telegram.org/bot${TG_TOKEN}/sendDocument?chat_id=${TG_CHAT}"
+              sleep 1  # Rate limiting
+            done
+          else
+            echo "--- No APK files to send ---"
+          fi
+
+          # Finally send all ZIP/Module files (only if they exist)
+          if [ $MODULE_COUNT -gt 0 ]; then
+            echo "--- Sending Module Files ---"
+            for OUTPUT in *.zip; do
+              [ "$OUTPUT" = "*.zip" ] && continue
+              echo "Sending Module: $OUTPUT"
+              FILE_SIZE=$(du -h "$OUTPUT" | cut -f1)
+              CAPTION="📦 <b>${OUTPUT}</b>%0A📏 Size: ${FILE_SIZE}%0A🏷️ Build: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}"
+              
+              curl -F "document=@$OUTPUT" \
+                   -F "caption=${CAPTION}" \
+                   -F "parse_mode=HTML" \
+                   "https://api.telegram.org/bot${TG_TOKEN}/sendDocument?chat_id=${TG_CHAT}"
+              sleep 1  # Rate limiting
+            done
+          else
+            echo "--- No Module files to send ---"
+          fi
