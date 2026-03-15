@@ -1,0 +1,116 @@
+name: Custom Build Wrapper
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Build modules/APKs
+        run: ./build.sh custom_config.toml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+      - name: Re-sign APKs
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.KEY_PASS }}
+        run: |
+          if [ -z "$KEYSTORE" ]; then
+            echo "No KEYSTORE secret found. Skipping signing."
+            exit 0
+          fi
+          
+          # Decode keystore
+          echo "$KEYSTORE" | base64 -d > custom.keystore
+          
+          cd build || { echo "build folder not found"; exit 1; }
+          
+          # Find Android build tools for zipalign and apksigner
+          BUILD_TOOLS_PATH=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          ZIPALIGN="$BUILD_TOOLS_PATH/zipalign"
+          APKSIGNER="$BUILD_TOOLS_PATH/apksigner"
+
+          for apk in *.apk; do
+            [ -f "$apk" ] || continue
+            echo "Processing $apk"
+            
+            # Strip generic test keys
+            zip -d "$apk" "META-INF/*" || true
+            
+            # Zipalign into a new file
+            "$ZIPALIGN" -p -f 4 "$apk" "aligned_$apk"
+            
+            # Sign with our custom keystore
+            "$APKSIGNER" sign --ks ../custom.keystore \
+              --ks-pass "pass:$KEYSTORE_PASS" \
+              --ks-key-alias "$KEY_ALIAS" \
+              --key-pass "pass:$KEY_PASS" \
+              "aligned_$apk"
+              
+            # Replace original with signed version
+            mv "aligned_$apk" "$apk"
+          done
+          cd ..
+
+      - name: Report to Telegram
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT }}
+        if: env.TG_TOKEN != null && env.TG_CHAT != null
+        run: |
+          cd build || { echo "build folder not found"; exit 1; }
+          
+          NL=$'\n'
+          APKS=""
+          APK_COUNT=0
+          
+          for OUTPUT in *.apk; do
+            [ -f "$OUTPUT" ] || continue
+            APKS+="${NL}📦 ${OUTPUT}"
+            APK_COUNT=$((APK_COUNT + 1))
+          done
+          
+          APKS=${APKS#"$NL"}
+          
+          MSG="*New Custom Build completed! 🎉*
+          
+          *APKs:*
+          ${APKS}
+          "
+          MSG=${MSG:0:4000}
+          
+          echo "--- Sending Summary Message ---"
+          curl -X POST --data-urlencode "parse_mode=Markdown" --data-urlencode "disable_web_page_preview=true" --data-urlencode "text=${MSG}" --data-urlencode "chat_id=${TG_CHAT}" "https://api.telegram.org/bot${TG_TOKEN}/sendMessage"
+          sleep 2
+          
+          if [ $APK_COUNT -gt 0 ]; then
+            echo "--- Sending APK Files ---"
+            for OUTPUT in *.apk; do
+              [ -f "$OUTPUT" ] || continue
+              echo "Sending APK: $OUTPUT"
+              FILE_SIZE=$(du -h "$OUTPUT" | cut -f1)
+              CAPTION="📱 <b>${OUTPUT}</b>%0A📏 Size: ${FILE_SIZE}"
+              
+              curl -F "document=@$OUTPUT" \
+                   -F "caption=${CAPTION}" \
+                   -F "parse_mode=HTML" \
+                   "https://api.telegram.org/bot${TG_TOKEN}/sendDocument?chat_id=${TG_CHAT}"
+              sleep 1
+            done
+          fi
