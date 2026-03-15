@@ -513,8 +513,14 @@ get_direct_resp() { __DIRECT_APKNAME__=$(awk -F/ '{print $NF}' <<<"$1"); }
 
 patch_apk() {
 	local stock_input=$1 patched_apk=$2 patcher_args=$3 cli_jar=$4 patches_jar=$5
-	local cmd="java -jar '$cli_jar' patch '$stock_input' --purge -o '$patched_apk' -p '$patches_jar' --keystore=ks.keystore \
---keystore-entry-password=123456789 --keystore-password=123456789 --signer=jhc --keystore-entry-alias=jhc $patcher_args"
+	local keystore_path=${KEYSTORE_PATH:-ks.keystore.bkp}
+	local keystore_pass=${KEYSTORE_PASS:-123456789}
+	local key_alias=${KEY_ALIAS:-jhc}
+	local key_pass=${KEY_PASS:-$keystore_pass}
+
+	# First, patch without signing (using --unsigned)
+	local unsigned_apk="${patched_apk}.unsigned"
+	local cmd="env -u GITHUB_REPOSITORY java -jar '$cli_jar' patch '$stock_input' --purge -o '$unsigned_apk' -p '$patches_jar' --unsigned $patcher_args"
 
 	# TODO: remove this later
 	local cli_name
@@ -523,10 +529,21 @@ patch_apk() {
 
 	if [ "$OS" = Android ]; then cmd+=" --custom-aapt2-binary='${AAPT2}'"; fi
 	pr "$cmd"
-	if eval "$cmd"; then [ -f "$patched_apk" ]; else
-		rm "$patched_apk" 2>/dev/null || :
+	if ! eval "$cmd"; then
+		rm "$unsigned_apk" 2>/dev/null || :
 		return 1
 	fi
+
+	# Then sign the unsigned APK using apksigner
+	pr "Signing APK with apksigner..."
+	if ! java -jar "$APKSIGNER" sign --ks "$keystore_path" --ks-pass "pass:$keystore_pass" --ks-key-alias "$key_alias" --key-pass "pass:$key_pass" --out "$patched_apk" "$unsigned_apk"; then
+		rm "$unsigned_apk" "$patched_apk" 2>/dev/null || :
+		return 1
+	fi
+
+	# Clean up the unsigned APK
+	rm "$unsigned_apk" 2>/dev/null || :
+	[ -f "$patched_apk" ]
 }
 
 check_sig() {
