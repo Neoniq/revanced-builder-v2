@@ -53,11 +53,21 @@ jobs:
           fetch-depth: 0
           submodules: true
 
+      - name: Get next version code
+        id: next_ver_code
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=$(gh release list -L 1 | awk -F '\t' '{print $3}')
+          if [ -z "$TAG" ]; then TAG=0; fi
+          echo "NEXT_VER_CODE=$((TAG + 1))" >> $GITHUB_OUTPUT
+
       - name: Build modules/APKs
         run: ./build.sh custom_config.toml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          NEXT_VER_CODE: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
 
       - name: Re-sign APKs
         env:
@@ -103,6 +113,25 @@ jobs:
           done
           cd ..
 
+      - name: Get output
+        id: get_output
+        run: |
+          DELIM="$(openssl rand -hex 8)"
+          echo "BUILD_LOG<<${DELIM}" >> "$GITHUB_OUTPUT"
+          cat build.md >> "$GITHUB_OUTPUT"
+          echo "${DELIM}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload modules to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          body: ${{ steps.get_output.outputs.BUILD_LOG }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./build/*
+          release_name: ReVanced Custom
+          tag: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
+          file_glob: true
+          overwrite: true
+
       - name: Report to Telegram
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
@@ -117,35 +146,32 @@ jobs:
           
           for OUTPUT in *.apk; do
             [ -f "$OUTPUT" ] || continue
-            APKS+="${NL}📦 ${OUTPUT}"
+            DL_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}/${OUTPUT}"
+            APKS+="${NL}📦 [${OUTPUT}](${DL_URL})"
             APK_COUNT=$((APK_COUNT + 1))
           done
           
           APKS=${APKS#"$NL"}
           
+          BODY="$(sed 's/^\* \*\*/↪ \*\*/g; s/^\* `/↪ \*\*/g; s/`/\*/g; s/^\* /\↪/g; s/\*\*/\*/g; s/###//g; s/^- /↪ /g; /^==/d;' ../build.md)"
+          
+          DOWNLOAD_SECTION=""
+          if [ $APK_COUNT -gt 0 ]; then
+            DOWNLOAD_SECTION="*🔗 Download Links:*${NL}${NL}APKs:${NL}${APKS}${NL}"
+          fi
+          
           MSG="*New Custom Build completed! 🎉*
           
-          *APKs:*
-          ${APKS}
+          ${BODY}
+          
+          ${DOWNLOAD_SECTION}
+          *📊 Build Info:*
+          ↪ Version: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
+          ↪ Commit: [\`${GITHUB_SHA:0:7}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA})
+          ↪ Repository: [${GITHUB_REPOSITORY}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY})
           "
           MSG=${MSG:0:4000}
           
           echo "--- Sending Summary Message ---"
           curl -X POST --data-urlencode "parse_mode=Markdown" --data-urlencode "disable_web_page_preview=true" --data-urlencode "text=${MSG}" --data-urlencode "chat_id=${TG_CHAT}" "https://api.telegram.org/bot${TG_TOKEN}/sendMessage"
-          sleep 2
-          
-          if [ $APK_COUNT -gt 0 ]; then
-            echo "--- Sending APK Files ---"
-            for OUTPUT in *.apk; do
-              [ -f "$OUTPUT" ] || continue
-              echo "Sending APK: $OUTPUT"
-              FILE_SIZE=$(du -h "$OUTPUT" | cut -f1)
-              CAPTION="📱 <b>${OUTPUT}</b>%0A📏 Size: ${FILE_SIZE}"
-              
-              curl -F "document=@$OUTPUT" \
-                   -F "caption=${CAPTION}" \
-                   -F "parse_mode=HTML" \
-                   "https://api.telegram.org/bot${TG_TOKEN}/sendDocument?chat_id=${TG_CHAT}"
-              sleep 1
-            done
-          fi
+
