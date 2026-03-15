@@ -518,14 +518,18 @@ patch_apk() {
 	local key_alias=${KEY_ALIAS:-jhc}
 	local key_pass=${KEY_PASS:-$keystore_pass}
 
-	# First, patch without signing (using --unsigned)
+	# First, patch without signing
 	local unsigned_apk="${patched_apk}.unsigned"
-	local cmd="env -u GITHUB_REPOSITORY java -jar '$cli_jar' patch '$stock_input' --purge -o '$unsigned_apk' -p '$patches_jar' --unsigned $patcher_args"
+	local cmd="env -u GITHUB_REPOSITORY java -jar '$cli_jar' patch '$stock_input' --purge -o '$unsigned_apk' -p '$patches_jar' $patcher_args"
 
 	# TODO: remove this later
 	local cli_name
 	cli_name=$(basename "$cli_jar")
-	if [ "${cli_name::8}" = revanced ]; then cmd+=" -b"; fi
+	if [ "${cli_name::8}" = revanced ]; then
+		cmd+=" -b"
+	else
+		cmd+=" --unsigned"
+	fi
 
 	if [ "$OS" = Android ]; then cmd+=" --custom-aapt2-binary='${AAPT2}'"; fi
 	pr "$cmd"
