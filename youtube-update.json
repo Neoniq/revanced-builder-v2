@@ -1,6 +1,6 @@
 {
-  "version": "v20.12.46 (patches 5.28.0)",
-  "versionCode": 1,
-  "zipUrl": "https://github.com/Neoniq/revanced-builder-v2/releases/download/1/youtube-revanced-magisk-v20.12.46-all.zip",
+  "version": "v20.40.45 (patches 6.0.0.rvp)",
+  "versionCode": 37,
+  "zipUrl": "https://github.com/Neoniq/revanced-builder-v2/releases/download/37/youtube-revanced-module-v20.40.45-all.zip",
   "changelog": "https://raw.githubusercontent.com/Neoniq/revanced-builder-v2/update/build.md"
 }
