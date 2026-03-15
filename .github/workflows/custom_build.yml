@@ -1,9 +1,44 @@
 name: Custom Build Wrapper
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 16 * * *"
 
 jobs:
+  check:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Should build?
+        id: should_build
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git checkout origin/update build.md; then
+            echo "first time building!"
+            echo "SHOULD_BUILD=1" >> $GITHUB_OUTPUT
+          else
+            UPDATE_CFG=$(./build.sh custom_config.toml --config-update)
+            if [ "$UPDATE_CFG" ]; then
+              echo "'$UPDATE_CFG'"
+              echo "SHOULD_BUILD=1" >> $GITHUB_OUTPUT
+            else
+              echo "SHOULD_BUILD=0" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+    outputs:
+      SHOULD_BUILD: ${{ steps.should_build.outputs.SHOULD_BUILD }}
+
   run:
+    needs: check
+    if: ${{ needs.check.outputs.SHOULD_BUILD == 1 || github.event_name == 'workflow_dispatch' }}
     permissions: write-all
     runs-on: ubuntu-latest
     steps:
