@@ -1,3 +1,9 @@
+[YouTube]
+build-mode = "both"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
+uptodown-dlurl = "https://youtube.en.uptodown.com/android"
+archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.google.android.youtube"
+
 [YouTube-Morphe]
 app-name = "YouTube"
 patches-source = "MorpheApp/morphe-patches"
