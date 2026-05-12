@@ -1,6 +1,6 @@
 {
-  "version": "v11.81.0-release.0 (patches 3.2.0.mpp)",
-  "versionCode": 53,
-  "zipUrl": "https://github.com/Neoniq/revanced-builder-v2/releases/download/53/twitter-piko-module-v11.81.0-release.0-all.zip",
+  "version": "v11.81.0-release.0 (patches 3.3.0.mpp)",
+  "versionCode": 54,
+  "zipUrl": "https://github.com/Neoniq/revanced-builder-v2/releases/download/54/twitter-piko-module-v11.81.0-release.0-all.zip",
   "changelog": "https://raw.githubusercontent.com/Neoniq/revanced-builder-v2/update/build.md"
 }
