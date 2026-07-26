@@ -30,5 +30,6 @@ When the user asks you to update this custom implementation based on upstream ch
    - The "Re-sign APKs" step.
    - The "Report to Telegram" step.
 4. **Do Not Touch Core Scripts:** Under no circumstances should you edit `utils.sh` to inject signing logic. That completely defeats the purpose of the wrapper architecture.
+5. **Default Push Behavior & Report Status:** The default behavior after completing work is to push changes to `origin` (with user confirmation if possible). Always explicitly state the repository status including whether changes are **Pushed** or **Not Pushed** to `origin` in the final summary response.
 
 By strictly isolating user modifications to `custom_build.yml` and `custom_config.toml`, the primary upstream logic can update indefinitely with zero merge conflicts.
