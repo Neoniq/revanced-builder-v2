@@ -32,4 +32,7 @@ When the user asks you to update this custom implementation based on upstream ch
 4. **Do Not Touch Core Scripts:** Under no circumstances should you edit `utils.sh` to inject signing logic. That completely defeats the purpose of the wrapper architecture.
 5. **Default Push Behavior & Report Status:** The default behavior after completing work is to push changes to `origin` (with user confirmation if possible). Always explicitly state the repository status including whether changes are **Pushed** or **Not Pushed** to `origin` in the final summary response.
 
+## Watch / Follow-ups
+- **`enable-update-checks` for forks:** Upstream currently hardcodes this to `GITHUB_REPOSITORY == "j-hc/revanced-magisk-module"` (extra patch bundle `j-hc/morphe-jhc-update-check-patch`). Do **not** enable it in `custom_config.toml` yet. On each upstream sync, check whether j-hc opens this for forks/templates (generic repo URL, configurable update endpoint, or removable hardcode). If yes, propose enabling it for our APK profiles and wire it through the wrapper without editing `utils.sh` unless upstream itself makes forks first-class.
+
 By strictly isolating user modifications to `custom_build.yml` and `custom_config.toml`, the primary upstream logic can update indefinitely with zero merge conflicts.
