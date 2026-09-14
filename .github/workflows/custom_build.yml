@@ -149,22 +149,20 @@ jobs:
           
           NL=$'\n'
           APKS=""
-          APK_COUNT=0
           
           for OUTPUT in *.apk; do
             [ -f "$OUTPUT" ] || continue
             DL_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}/${OUTPUT}"
             APKS+="${NL}📦 [${OUTPUT}](${DL_URL})"
-            APK_COUNT=$((APK_COUNT + 1))
           done
           
-          APKS=${APKS#"$NL"}
+          if [ -n "$APKS" ]; then APKS="APKs:${NL}${APKS#"$NL"}"; fi
           
-          BODY="$(sed 's/^\* \*\*/↪ \*\*/g; s/^\* `/↪ \*\*/g; s/`/\*/g; s/^\* /\↪/g; s/\*\*/\*/g; s/###//g; s/^- /↪ /g; /^==/d;' ../build.md)"
+          BODY="$(cat ../build.md)"
           
           DOWNLOAD_SECTION=""
-          if [ $APK_COUNT -gt 0 ]; then
-            DOWNLOAD_SECTION="*🔗 Download Links:*${NL}${NL}APKs:${NL}${APKS}${NL}"
+          if [ -n "$APKS" ]; then
+            DOWNLOAD_SECTION="*🔗 Download Links:*${NL}${NL}${APKS}${NL}"
           fi
           
           MSG="*New Custom Build completed! 🎉*
