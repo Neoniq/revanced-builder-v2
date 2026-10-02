@@ -150,17 +150,33 @@ jobs:
           NL=$'\n'
           APKS=""
           
+          BUILD_TOOLS_PATH=$(ls -d "$ANDROID_HOME"/build-tools/* | tail -1)
+          AAPT="$BUILD_TOOLS_PATH/aapt"
+          SOURCE_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+
           for OUTPUT in *.apk; do
             [ -f "$OUTPUT" ] || continue
-            DL_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}/${OUTPUT}"
-            APKS+="${NL}📦 [${OUTPUT}](${DL_URL})"
+            DL_URL="$SOURCE_URL/releases/download/${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}/${OUTPUT}"
+
+            # Keep the variant name stable while allowing the version to change.
+            APK_PREFIX=$(printf '%s' "$OUTPUT" | sed -E 's/-v[0-9]+([.][0-9]+)*.*[.]apk$//')
+            APK_FILTER="^${APK_PREFIX}-v.*[.]apk$"
+            APP_NAME=$(printf '%s' "$APK_PREFIX" | sed -E 's/[-_]+/ /g')
+
+            APP_ID=$("$AAPT" dump badging "$OUTPUT" 2>/dev/null | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -1)
+            [ -n "$APP_ID" ] || APP_ID="temp-$(printf '%s' "$APK_PREFIX" | sha256sum | cut -c1-12)"
+
+            SETTINGS=$(python3 -c 'import json,sys; print(json.dumps({"apkFilterRegEx":sys.argv[1]},separators=(",",":")))' "$APK_FILTER")
+            CONFIG=$(python3 -c 'import json,sys; print(json.dumps({"id":sys.argv[1],"url":sys.argv[2],"author":"Neoniq","name":sys.argv[3],"additionalSettings":sys.argv[4],"overrideSource":"GitHub"},separators=(",",":")))' "$APP_ID" "$SOURCE_URL" "$APP_NAME" "$SETTINGS")
+            ENCODED_CONFIG=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1],safe=""))' "$CONFIG")
+            DIRECT_URL="obtainium://app/${ENCODED_CONFIG}"
+            REDIRECT_URL="https://apps.obtainium.imranr.dev/redirect?r=${DIRECT_URL}"
+
+            APKS+="${NL}📦 *${APP_NAME}*${NL}↳ [APK](${DL_URL}) · [Obtainium](${REDIRECT_URL})${NL}↳ \`${DIRECT_URL}\`"
           done
-          
-          if [ -n "$APKS" ]; then APKS="APKs:${NL}${APKS#"$NL"}"; fi
-          
-          OBTAINIUM_URL="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
-          OBTAINIUM_SECTION="*📲 Obtainium:*${NL}[Add this app to Obtainium](${OBTAINIUM_URL})${NL}"
-          
+
+          if [ -n "$APKS" ]; then APKS="Apps:${NL}${APKS#"$NL"}"; fi
+
           BODY="$(cat ../build.md)"
           
           DOWNLOAD_SECTION=""
@@ -173,7 +189,6 @@ jobs:
           ${BODY}
           
           ${DOWNLOAD_SECTION}
-          ${OBTAINIUM_SECTION}
           *📊 Build Info:*
           ↪ Version: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
           ↪ Commit: [\`${GITHUB_SHA:0:7}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA})
