@@ -158,6 +158,9 @@ jobs:
           
           if [ -n "$APKS" ]; then APKS="APKs:${NL}${APKS#"$NL"}"; fi
           
+          OBTAINIUM_URL="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          OBTAINIUM_SECTION="*📲 Obtainium:*${NL}[Add this app to Obtainium](${OBTAINIUM_URL})${NL}"
+          
           BODY="$(cat ../build.md)"
           
           DOWNLOAD_SECTION=""
@@ -170,6 +173,7 @@ jobs:
           ${BODY}
           
           ${DOWNLOAD_SECTION}
+          ${OBTAINIUM_SECTION}
           *📊 Build Info:*
           ↪ Version: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
           ↪ Commit: [\`${GITHUB_SHA:0:7}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA})
