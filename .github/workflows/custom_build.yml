@@ -167,12 +167,12 @@ jobs:
             [ -n "$APP_ID" ] || APP_ID="temp-$(printf '%s' "$APK_PREFIX" | sha256sum | cut -c1-12)"
 
             SETTINGS=$(python3 -c 'import json,sys; print(json.dumps({"apkFilterRegEx":sys.argv[1]},separators=(",",":")))' "$APK_FILTER")
-            CONFIG=$(python3 -c 'import json,sys; print(json.dumps({"id":sys.argv[1],"url":sys.argv[2],"author":"Neoniq","name":sys.argv[3],"additionalSettings":sys.argv[4],"overrideSource":"GitHub"},separators=(",",":")))' "$APP_ID" "$SOURCE_URL" "$APP_NAME" "$SETTINGS")
+            CONFIG=$(python3 -c 'import json,sys; print(json.dumps({"id":sys.argv[1],"url":sys.argv[2],"author":"Neoniq","name":sys.argv[3],"preferredApkIndex":0,"additionalSettings":sys.argv[4],"overrideSource":"GitHub"},separators=(",",":")))' "$APP_ID" "$SOURCE_URL" "$APP_NAME" "$SETTINGS")
             ENCODED_CONFIG=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1],safe=""))' "$CONFIG")
             DIRECT_URL="obtainium://app/${ENCODED_CONFIG}"
             REDIRECT_URL="https://apps.obtainium.imranr.dev/redirect?r=${DIRECT_URL}"
 
-            APKS+="${NL}📦 *${APP_NAME}*${NL}↳ [APK](${DL_URL}) · [Obtainium](${REDIRECT_URL})${NL}↳ \`${DIRECT_URL}\`"
+            APKS+="${NL}📦 *${APP_NAME}*${NL}↳ [APK](${DL_URL}) · [Obtainium](${REDIRECT_URL})"
           done
 
           if [ -n "$APKS" ]; then APKS="Apps:${NL}${APKS#"$NL"}"; fi
