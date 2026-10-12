@@ -166,8 +166,8 @@ jobs:
             APP_ID=$("$AAPT" dump badging "$OUTPUT" 2>/dev/null | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -1)
             [ -n "$APP_ID" ] || APP_ID="temp-$(printf '%s' "$APK_PREFIX" | sha256sum | cut -c1-12)"
 
-            SETTINGS=$(python3 -c 'import json,sys; print(json.dumps({"apkFilterRegEx":sys.argv[1]},separators=(",",":")))' "$APK_FILTER")
-            CONFIG=$(python3 -c 'import json,sys; print(json.dumps({"id":sys.argv[1],"url":sys.argv[2],"author":"Neoniq","name":sys.argv[3],"preferredApkIndex":0,"additionalSettings":sys.argv[4],"overrideSource":"GitHub"},separators=(",",":")))' "$APP_ID" "$SOURCE_URL" "$APP_NAME" "$SETTINGS")
+            SETTINGS=$(python3 -c 'import json,sys; print(json.dumps({"includePrereleases":False,"fallbackToOlderReleases":True,"filterReleaseTitlesByRegEx":"ReVanced Custom","apkFilterRegEx":sys.argv[1],"autoApkFilterByArch":True},separators=(",",":")))' "$APK_FILTER")
+            CONFIG=$(python3 -c 'import json,sys; print(json.dumps({"id":sys.argv[1],"url":sys.argv[2],"author":"Neoniq","name":sys.argv[3],"preferredApkIndex":0,"additionalSettings":sys.argv[4],"overrideSource":None},separators=(",",":")))' "$APP_ID" "$SOURCE_URL" "$APP_NAME" "$SETTINGS")
             ENCODED_CONFIG=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1],safe=""))' "$CONFIG")
             DIRECT_URL="obtainium://app/${ENCODED_CONFIG}"
             REDIRECT_URL="https://apps.obtainium.imranr.dev/redirect?r=${DIRECT_URL}"
