@@ -181,7 +181,7 @@ jobs:
           
           DOWNLOAD_SECTION=""
           if [ -n "$APKS" ]; then
-            DOWNLOAD_SECTION="*🔗 Download Links:*${NL}${NL}${APKS}${NL}"
+            DOWNLOAD_SECTION="*🔗 Download Links:*${NL}${NL}${APKS}${NL}${NL}ℹ️ Obtainium: если появляется Invalid input, откройте ссылку во внешнем браузере, а не внутри Telegram.${NL}"
           fi
           
           MSG="*New Custom Build completed! 🎉*
