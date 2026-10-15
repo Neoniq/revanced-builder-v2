@@ -180,9 +180,14 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch --no-tags origin custom-update || true
+          if git ls-remote --exit-code --heads origin custom-update >/dev/null 2>&1; then
+            git fetch --no-tags origin custom-update
+          fi
 
-          PARENT=$(git rev-parse refs/remotes/origin/custom-update 2>/dev/null || true)
+          PARENT=""
+          if git show-ref --verify --quiet refs/remotes/origin/custom-update; then
+            PARENT=$(git rev-parse --verify refs/remotes/origin/custom-update)
+          fi
           BLOB=$(git hash-object -w build.md)
           TREE=$(printf '100644 blob %s\tbuild.md\n' "$BLOB" | git mktree)
           if [ -n "$PARENT" ]; then
