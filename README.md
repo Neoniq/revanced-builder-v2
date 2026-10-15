@@ -30,7 +30,7 @@ Use [**zygisk-detach**](https://github.com/j-hc/zygisk-detach) to detach YouTube
 ## Custom build channel
 
  * Edit [`custom_config.toml`](./custom_config.toml) for enabled APK profiles.
- * Run the [Custom Build Wrapper](../../actions/workflows/custom_build.yml) manually or wait for its daily schedule.
+ * Push to `master` to start a test build, or wait for the daily schedule.
  * Grab signed APKs from [releases](../../releases).
 
 also see here [`CONFIG.md`](./CONFIG.md)
