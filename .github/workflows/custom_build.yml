@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "0 16 * * *"
 
+concurrency:
+  group: custom-build-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   check:
     permissions: write-all
@@ -25,8 +29,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! git checkout origin/update build.md; then
-            echo "first time building!"
+          if ! git fetch --no-tags origin custom-update; then
+            echo "no custom build state yet; building!"
+            echo "SHOULD_BUILD=1" >> $GITHUB_OUTPUT
+          elif ! git show origin/custom-update:build.md > build.md; then
+            echo "custom build state is missing build.md; building!"
             echo "SHOULD_BUILD=1" >> $GITHUB_OUTPUT
           else
             UPDATE_CFG=$(./build.sh custom_config.toml --config-update)
@@ -81,13 +88,27 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASS: ${{ secrets.KEY_PASS }}
         run: |
+          set -euo pipefail
           if [ -z "$KEYSTORE" ]; then
-            echo "No KEYSTORE secret found. Skipping signing."
-            exit 0
+            echo "No KEYSTORE secret found. Refusing to publish unsigned APKs."
+            exit 1
+          fi
+          if [ -z "$KEYSTORE_PASS" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASS" ]; then
+            echo "Signing secrets are incomplete. Refusing to publish APKs."
+            exit 1
           fi
           
           # Decode keystore
           echo "$KEYSTORE" | base64 -d > custom.keystore
+          trap 'rm -f custom.keystore' EXIT
+
+          EXPECTED_CERT=$(keytool -list -v -keystore custom.keystore \
+            -storepass "$KEYSTORE_PASS" -alias "$KEY_ALIAS" |
+            sed -nE 's/^\s*SHA-?256: //p' | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+          if [ -z "$EXPECTED_CERT" ]; then
+            echo "Could not read the signing certificate from KEYSTORE."
+            exit 1
+          fi
           
           cd build || { echo "build folder not found"; exit 1; }
           
@@ -95,9 +116,14 @@ jobs:
           BUILD_TOOLS_PATH=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
           ZIPALIGN="$BUILD_TOOLS_PATH/zipalign"
           APKSIGNER="$BUILD_TOOLS_PATH/apksigner"
+          shopt -s nullglob
+          APKS=( *.apk )
+          if [ "${#APKS[@]}" -eq 0 ]; then
+            echo "No APK artifacts found. Refusing to publish an empty release."
+            exit 1
+          fi
 
-          for apk in *.apk; do
-            [ -f "$apk" ] || continue
+          for apk in "${APKS[@]}"; do
             echo "Processing $apk"
             
             # Strip generic test keys
@@ -115,6 +141,14 @@ jobs:
               
             # Replace original with signed version
             mv "aligned_$apk" "$apk"
+
+            ACTUAL_CERT=$("$APKSIGNER" verify --print-certs "$apk" |
+              sed -nE 's/.*certificate SHA-256 digest: //p' | head -1 |
+              tr -d ':' | tr '[:lower:]' '[:upper:]')
+            if [ "$ACTUAL_CERT" != "$EXPECTED_CERT" ]; then
+              echo "Certificate verification failed for $apk."
+              exit 1
+            fi
           done
           cd ..
 
@@ -138,6 +172,25 @@ jobs:
           else
             gh release create "$TAG" ./build/* --title "ReVanced Custom" --notes "$BODY"
           fi
+
+      - name: Update custom build state
+        env:
+          BUILD_VERSION: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags origin custom-update || true
+
+          PARENT=$(git rev-parse refs/remotes/origin/custom-update 2>/dev/null || true)
+          BLOB=$(git hash-object -w build.md)
+          TREE=$(printf '100644 blob %s\tbuild.md\n' "$BLOB" | git mktree)
+          if [ -n "$PARENT" ]; then
+            STATE_COMMIT=$(printf 'Custom build state %s\n\n' "$BUILD_VERSION" | git commit-tree "$TREE" -p "$PARENT")
+          else
+            STATE_COMMIT=$(printf 'Custom build state %s\n\n' "$BUILD_VERSION" | git commit-tree "$TREE")
+          fi
+          git push origin "$STATE_COMMIT:refs/heads/custom-update"
 
       - name: Report to Telegram
         env:

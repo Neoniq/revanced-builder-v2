@@ -1,10 +1,12 @@
-# ReVanced Magisk Module
+# ReVanced Builder v2 — custom APK channel
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/rvc_magisk)
-[![CI](https://github.com/j-hc/revanced-magisk-module/actions/workflows/ci.yml/badge.svg?event=schedule)](https://github.com/j-hc/revanced-magisk-module/actions/workflows/ci.yml)
+[![Custom Build](https://github.com/Neoniq/revanced-builder-v2/actions/workflows/custom_build.yml/badge.svg)](https://github.com/Neoniq/revanced-builder-v2/actions/workflows/custom_build.yml)
 
-Extensive ReVanced builder  
+Customized fork of the [j-hc/revanced-magisk-module](https://github.com/j-hc/revanced-magisk-module) builder.
 
-Get the [latest CI release](https://github.com/j-hc/revanced-magisk-module/releases).
+The primary branch is `custom-build`. It publishes APKs from [`custom_config.toml`](./custom_config.toml), re-signs them with the repository's private keystore, creates GitHub Releases, and sends Telegram reports. See [`CUSTOM_BUILD.md`](./CUSTOM_BUILD.md) for the release contract.
+
+Get the [latest custom release](../../releases).
 
 Use [**zygisk-detach**](https://github.com/j-hc/zygisk-detach) to detach YouTube and YT Music from Play Store if you are using magisk modules. 
 
@@ -25,13 +27,11 @@ Use [**zygisk-detach**](https://github.com/j-hc/zygisk-detach) to detach YouTube
 </ul>
 </details>
 
-## To include/exclude patches or patch other apps
+## Custom build channel
 
- * Star the repo :eyes:
- * Use the repo as a [template](https://github.com/new?template_name=revanced-magisk-module&template_owner=j-hc)
- * Customize [`config.toml`](./config.toml) using [rvmm-config-gen](https://j-hc.github.io/rvmm-config-gen/)
- * Run the build [workflow](../../actions/workflows/build.yml)
- * Grab your modules and APKs from [releases](../../releases)
+ * Edit [`custom_config.toml`](./custom_config.toml) for enabled APK profiles.
+ * Run the [Custom Build Wrapper](../../actions/workflows/custom_build.yml) manually or wait for its daily schedule.
+ * Grab signed APKs from [releases](../../releases).
 
 also see here [`CONFIG.md`](./CONFIG.md)
 
@@ -45,12 +45,12 @@ You can consider using [rvmm-zygisk-mount](https://github.com/j-hc/rvmm-zygisk-m
 ## Building Locally
 ### On Termux
 ```console
-bash <(curl -sSf https://raw.githubusercontent.com/j-hc/revanced-magisk-module/main/build-termux.sh)
+bash <(curl -sSf https://raw.githubusercontent.com/Neoniq/revanced-builder-v2/custom-build/build-termux.sh)
 ```
 
 ### On Linux
 ```console
-$ git clone https://github.com/j-hc/revanced-magisk-module --depth 1
-$ cd revanced-magisk-module
-$ ./build.sh
+$ git clone https://github.com/Neoniq/revanced-builder-v2 --depth 1
+$ cd revanced-builder-v2
+$ ./build.sh custom_config.toml
 ```

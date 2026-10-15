@@ -14,11 +14,15 @@ Instead, custom logic is decoupled into two dedicated files:
 
 ### How the Custom Workflow Works
 1. Runs the native, untouched builder using the custom config: `./build.sh custom_config.toml`.
-2. Intercepts the generated `.apk` files.
-3. Decodes the base64 `KEYSTORE` GitHub Secret.
-4. Uses `zip -d` to strip the generic test keys from the generated APKs.
-5. Uses `zipalign` and `apksigner` to properly re-sign the APKs using the user's secret Keystore.
-6. Crafts a Telegram Markdown message and uploads the signed APKs directly to the user's Telegram chat using the Telegram Bot API (`TG_TOKEN` and `TG_CHAT` secrets).
+2. Reads and updates `custom-update/build.md` as the custom state for `--config-update`; it does not use upstream's `update` branch.
+3. Intercepts the generated `.apk` files.
+4. Decodes the base64 `KEYSTORE` GitHub Secret.
+5. Uses `zip -d` to strip the generic test keys from the generated APKs.
+6. Uses `zipalign` and `apksigner` to properly re-sign and verify the APKs using the user's secret Keystore.
+7. Crafts a Telegram Markdown message and uploads the signed APKs directly to the user's Telegram chat using the Telegram Bot API (`TG_TOKEN` and `TG_CHAT` secrets).
+
+### Branch and Workflow Ownership
+`custom-build` is the primary and default branch for this fork. The former legacy `main` line is retained as `backup/legacy-main` for rollback only. The upstream `CI` and `Build Modules` workflows are disabled in the GitHub repository so only `custom_build.yml` schedules releases from `custom_config.toml`.
 
 ## Instructions for Updating the Implementation
 When the user asks you to update this custom implementation based on upstream changes, follow these steps:
@@ -33,6 +37,7 @@ When the user asks you to update this custom implementation based on upstream ch
 5. **Default Push Behavior & Report Status:** The default behavior after completing work is to push changes to `origin` (with user confirmation if possible). Always explicitly state the repository status including whether changes are **Pushed** or **Not Pushed** to `origin` in the final summary response.
 
 ## Watch / Follow-ups
-- **`enable-update-checks` for forks:** Upstream currently hardcodes this to `GITHUB_REPOSITORY == "j-hc/revanced-magisk-module"` (extra patch bundle `j-hc/morphe-jhc-update-check-patch`). Do **not** enable it in `custom_config.toml` yet. On each upstream sync, check whether j-hc opens this for forks/templates (generic repo URL, configurable update endpoint, or removable hardcode). If yes, propose enabling it for our APK profiles and wire it through the wrapper without editing `utils.sh` unless upstream itself makes forks first-class.
+- **`enable-update-checks` for forks:** Upstream now accepts `${GITHUB_REPOSITORY}` as the update repository. It is enabled for the supported YouTube profiles in `custom_config.toml`; keep it disabled for unsupported apps such as Reddit unless upstream documents support.
+- **Custom state:** Keep `custom-update` owned by `custom_build.yml`. Do not restore the old dependency on upstream's `update` branch, because the upstream CI is disabled in this fork.
 
-By strictly isolating user modifications to `custom_build.yml` and `custom_config.toml`, the primary upstream logic can update indefinitely with zero merge conflicts.
+By isolating build behavior in `custom_build.yml` and `custom_config.toml`, and keeping documentation/state in custom-named files and branches, the primary upstream logic can update with minimal merge conflicts.

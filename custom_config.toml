@@ -1,6 +1,6 @@
 [YouTube]
+enabled = false # legacy generic ReVanced profile; keep disabled in favour of YouTube-Morphe
 build-mode = "apk"
-enable-update-checks = true
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
 uptodown-dlurl = "https://youtube.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.google.android.youtube"
