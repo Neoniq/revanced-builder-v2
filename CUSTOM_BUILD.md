@@ -1,6 +1,6 @@
 # Custom build channel
 
-This fork publishes the user's APK channel from `custom-build`.
+This fork publishes the user's APK channel from `master`.
 
 ## What runs
 
@@ -20,4 +20,4 @@ The upstream `CI` and `Build Modules` workflows remain in the checkout for upstr
 
 The final APK certificate must come from the `KEYSTORE`, `KEYSTORE_PASS`, `KEY_ALIAS`, and `KEY_PASS` secrets. The workflow fails before publishing when signing secrets or certificate verification are missing.
 
-`custom-build` is the primary branch. `backup/legacy-main` is an archival rollback point.
+`master` is the primary branch. `backup/legacy-custom-build` and the other `backup/*` branches are archival rollback points.

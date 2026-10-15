@@ -4,7 +4,7 @@
 
 Customized fork of the [j-hc/revanced-magisk-module](https://github.com/j-hc/revanced-magisk-module) builder.
 
-The primary branch is `custom-build`. It publishes APKs from [`custom_config.toml`](./custom_config.toml), re-signs them with the repository's private keystore, creates GitHub Releases, and sends Telegram reports. See [`CUSTOM_BUILD.md`](./CUSTOM_BUILD.md) for the release contract.
+The primary branch is `master`. It publishes APKs from [`custom_config.toml`](./custom_config.toml), re-signs them with the repository's private keystore, creates GitHub Releases, and sends Telegram reports. See [`CUSTOM_BUILD.md`](./CUSTOM_BUILD.md) for the release contract.
 
 Get the [latest custom release](../../releases).
 
@@ -45,7 +45,7 @@ You can consider using [rvmm-zygisk-mount](https://github.com/j-hc/rvmm-zygisk-m
 ## Building Locally
 ### On Termux
 ```console
-bash <(curl -sSf https://raw.githubusercontent.com/Neoniq/revanced-builder-v2/custom-build/build-termux.sh)
+bash <(curl -sSf https://raw.githubusercontent.com/Neoniq/revanced-builder-v2/master/build-termux.sh)
 ```
 
 ### On Linux

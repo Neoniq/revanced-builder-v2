@@ -22,7 +22,7 @@ Instead, custom logic is decoupled into two dedicated files:
 7. Crafts a Telegram Markdown message and uploads the signed APKs directly to the user's Telegram chat using the Telegram Bot API (`TG_TOKEN` and `TG_CHAT` secrets).
 
 ### Branch and Workflow Ownership
-`custom-build` is the primary and default branch for this fork. The former legacy `main` line is retained as `backup/legacy-main` for rollback only. The upstream `CI` and `Build Modules` workflows are disabled in the GitHub repository so only `custom_build.yml` schedules releases from `custom_config.toml`.
+`master` is the primary and default branch for this fork. The former `custom-build` line is retained as `backup/legacy-custom-build`; older lines are retained under `backup/*` for rollback only. The upstream `CI` and `Build Modules` workflows are disabled in the GitHub repository so only `custom_build.yml` schedules releases from `custom_config.toml`.
 
 ## Instructions for Updating the Implementation
 When the user asks you to update this custom implementation based on upstream changes, follow these steps:
