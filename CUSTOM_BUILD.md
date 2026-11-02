@@ -11,7 +11,7 @@ The upstream `CI` and `Build Modules` workflows remain in the checkout for upstr
 ## Profiles
 
 - `YouTube-Morphe` — enabled APK profile with in-app update checks.
-- `Reddit-Morphe` — enabled APK profile.
+- `Reddit-Morphe` — enabled APK profile with in-app update checks.
 - `YouTube` — legacy generic profile, kept disabled.
 
 ## State and updates

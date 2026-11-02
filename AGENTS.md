@@ -37,7 +37,7 @@ When the user asks you to update this custom implementation based on upstream ch
 5. **Default Push Behavior & Report Status:** The default behavior after completing work is to push changes to `origin` (with user confirmation if possible). Always explicitly state the repository status including whether changes are **Pushed** or **Not Pushed** to `origin` in the final summary response.
 
 ## Watch / Follow-ups
-- **`enable-update-checks` for forks:** Upstream now accepts `${GITHUB_REPOSITORY}` as the update repository. It is enabled for the supported YouTube profiles in `custom_config.toml`; keep it disabled for unsupported apps such as Reddit unless upstream documents support.
+- **`enable-update-checks` for forks:** Upstream accepts `${GITHUB_REPOSITORY}` as the update repository and now enables update checks for Reddit too. Keep the option enabled for both active Morphe APK profiles in `custom_config.toml`.
 - **Custom state:** Keep `custom-update` owned by `custom_build.yml`. Do not restore the old dependency on upstream's `update` branch, because the upstream CI is disabled in this fork.
 
 By isolating build behavior in `custom_build.yml` and `custom_config.toml`, and keeping documentation/state in custom-named files and branches, the primary upstream logic can update with minimal merge conflicts.

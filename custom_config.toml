@@ -17,6 +17,7 @@ uptodown-dlurl = "https://youtube.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.google.android.youtube"
 
 [Reddit-Morphe]
+enable-update-checks = true
 app-name = "Reddit"
 rv-brand = "Morphe"
 build-mode = "apk"
